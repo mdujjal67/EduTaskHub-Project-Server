@@ -33,6 +33,7 @@ async function run() {
 
     
     // ----------------services related api -------------------
+    
     // get all features data
     app.get('/features', async (req, res) => {
         const cursor = featuresCollection.find();   //In one line: const result = await featuresCollection.find().toArray()
