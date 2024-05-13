@@ -31,6 +31,7 @@ async function run() {
   try {
     const featuresCollection = client.db('EduTaskHub').collection('features');
     const assignmentCollection = client.db('EduTaskHub').collection('createdAssignments');
+    const SubmittedAssignmentCollection = client.db('EduTaskHub').collection('submittedAssignments');
 
     
     // ----------------services related api -------------------
@@ -50,7 +51,18 @@ async function run() {
       const query = { _id: new ObjectId(id) }
       const result = await assignmentCollection.findOne(query);
       res.send(result);
-    })
+    });
+
+
+    
+    // get submitted assignment data from client side
+      app.post('/submittedAssignments', async(req, res) => {
+        const submittedAssignment = req.body
+        console.log(submittedAssignment)
+        const result = await SubmittedAssignmentCollection.insertOne(submittedAssignment)
+        res.send(result)
+      });
+
 
 
       // get posted assignment data from client side
@@ -62,11 +74,13 @@ async function run() {
       });
 
 
+
       // read all create assignment data
     app.get('/createdAssignments', async(req, res) => {
       const result = await assignmentCollection.find().toArray()
       res.send(result)
     });
+
 
 
     // delete a assignment data
@@ -76,6 +90,7 @@ async function run() {
       const result = await assignmentCollection.deleteOne(query)
       res.send(result)
   });
+
 
 
   // for update data
