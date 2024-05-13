@@ -42,6 +42,17 @@ async function run() {
         res.send(result);
       });
 
+
+
+      // for specific data
+    app.get('/createdAssignments/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await assignmentCollection.findOne(query);
+      res.send(result);
+    })
+
+
       // get posted assignment data from client side
       app.post('/createdAssignments', async(req, res) => {
         const createdAssignment = req.body
@@ -50,11 +61,13 @@ async function run() {
         res.send(result)
       });
 
+
       // read all create assignment data
     app.get('/createdAssignments', async(req, res) => {
       const result = await assignmentCollection.find().toArray()
       res.send(result)
     });
+
 
     // delete a assignment data
     app.delete('/createdAssignments/:id',async(req, res) => {
@@ -62,6 +75,27 @@ async function run() {
       const query = { _id: new ObjectId(id) }
       const result = await assignmentCollection.deleteOne(query)
       res.send(result)
+  });
+
+
+  // for update data
+  app.put('/createdAssignments/:id', async (req, res) => {
+    const id = req.params.id;
+    const filter = { _id: new ObjectId(id) }
+    const updatedAssignment = req.body;
+    console.log(updatedAssignment);
+    const updateDoc = {
+      $set: {
+        title: updatedAssignment.title,
+        date: updatedAssignment.date,
+        description: updatedAssignment.description,
+        marks: updatedAssignment.marks,
+        level: updatedAssignment.level,
+        imageURL: updatedAssignment.imageURL
+      }
+    };
+    const result = await assignmentCollection.updateOne(filter, updateDoc)
+    res.send(result)
   })
 
     
