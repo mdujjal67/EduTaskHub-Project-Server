@@ -30,6 +30,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const featuresCollection = client.db('EduTaskHub').collection('features');
+    const assignmentCollection = client.db('EduTaskHub').collection('createdAssignments');
 
     
     // ----------------services related api -------------------
@@ -40,6 +41,21 @@ async function run() {
         const result = await cursor.toArray();
         res.send(result);
       });
+
+      // get posted assignment data from client side
+      app.post('/createdAssignments', async(req, res) => {
+        const createdAssignment = req.body
+        console.log(createdAssignment)
+        const result = await assignmentCollection.insertOne(createdAssignment)
+        res.send(result)
+      });
+
+      // read all create assignment data
+    app.get('/createdAssignments', async(req, res) => {
+      const cursor = assignmentCollection.find()
+      const result = await cursor.toArray()
+      res.send(result)
+    })
 
     
     // Connect the client to the server	(optional starting in v4.7)
