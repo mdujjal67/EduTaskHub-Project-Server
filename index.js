@@ -52,10 +52,17 @@ async function run() {
 
       // read all create assignment data
     app.get('/createdAssignments', async(req, res) => {
-      const cursor = assignmentCollection.find()
-      const result = await cursor.toArray()
+      const result = await assignmentCollection.find().toArray()
       res.send(result)
-    })
+    });
+
+    // delete a assignment data
+    app.delete('/createdAssignments/:id',async(req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await assignmentCollection.deleteOne(query)
+      res.send(result)
+  })
 
     
     // Connect the client to the server	(optional starting in v4.7)
