@@ -73,6 +73,7 @@ async function run() {
     const featuresCollection = client.db('EduTaskHub').collection('features');
     const assignmentCollection = client.db('EduTaskHub').collection('createdAssignments');
     const SubmittedAssignmentCollection = client.db('EduTaskHub').collection('submittedAssignments');
+    const subscribeCollection = client.db('EduTaskHub').collection('subscribers');
 
 
     // -------------auth related api--------------
@@ -97,7 +98,7 @@ async function run() {
 
     // ----------------services related api -------------------
     
-    // get all features data
+    // read and get all features data
     app.get('/features', async (req, res) => {
         const cursor = featuresCollection.find();   //In one line: const result = await featuresCollection.find().toArray()
         const result = await cursor.toArray();
@@ -106,13 +107,42 @@ async function run() {
 
 
 
-      // for specific data
+      // read and get specific data
     app.get('/createdAssignments/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await assignmentCollection.findOne(query);
       res.send(result);
     });
+
+
+
+    // subscribe data receive from client side visitor
+    app.post('/subscriber', async(req, res) => {
+      const subscriber = req.body
+      console.log(subscriber)
+      const result = await subscribeCollection.insertOne(subscriber)
+      res.send(result)
+    });
+
+
+
+    app.get('/subscriber', verifyToken, async (req, res) => {
+      console.log(req.query.email, req.user);
+
+      // check if the token owner is the right owner to receive data
+      console.log('token owner info', req.user)
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+
+      let query = {}
+      if (req.query?.email) {
+        query = { email: req.query.email }
+      }
+      const result = await subscribeCollection.find(query).toArray()
+      res.send(result)
+    })
 
 
     
