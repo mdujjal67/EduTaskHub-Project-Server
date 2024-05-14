@@ -3,6 +3,7 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const jwt = require('jsonwebtoken'); //for jwt setup
+const cookieParser = require('cookie-parser'); //for cookie parser
 require('dotenv').config()
 const port = process.env.PORT || 5000;
 
@@ -14,6 +15,7 @@ const corsOptions = {
 }
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
 
 // --------------------------MongoDB Start-------------------------------
 
@@ -27,6 +29,36 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+
+//-------- customized middleware------------
+const logger = async (req, res, next) => {
+  console.log('user > url called:', req.method, req.host, req.url);
+  next()
+};
+
+const verifyToken = async (req, res, next) => {    //use this middleware (verifyToken) where you want to secure, like booking url
+  const token = req?.cookies?.token;
+  console.log('value of token in middleware:', token)
+
+  if (!token) {      //if no token return with error
+    return res.status(401).send({ message: 'unauthorized access' })
+  }
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {    // token verify
+    // error
+    if (err) {
+      console.log(err);
+      return res.status(401).send({ message: 'unauthorized access' })
+    }
+    // if token is valid then it would be decoded
+    console.log('value in the token:', decoded)
+    req.user = decoded
+    next();
+    // now go to any api and use condition (like booking) where you want to check the owner is the real owner to receive the data
+  })
+
+}
 
 
 const cookieOption = {
@@ -61,6 +93,8 @@ async function run() {
     })
 
     
+
+
     // ----------------services related api -------------------
     
     // get all features data
@@ -91,11 +125,23 @@ async function run() {
       });
 
 
-        // read all submitted assignment data
-    app.get('/submittedAssignments', async(req, res) => {
-      const result = await SubmittedAssignmentCollection.find().toArray()
+    // for only my submitted assignment data
+    app.get('/submittedAssignments', verifyToken, async (req, res) => {
+      console.log(req.query.email, req.user);
+
+      // check if the token owner is the right owner to receive data
+      console.log('token owner info', req.user)
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+
+      let query = {}
+      if (req.query?.email) {
+        query = { email: req.query.email }
+      }
+      const result = await SubmittedAssignmentCollection.find(query).toArray()
       res.send(result)
-    });
+    })
 
 
 
