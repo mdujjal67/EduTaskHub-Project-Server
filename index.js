@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
+const jwt = require('jsonwebtoken'); //for jwt setup
 require('dotenv').config()
 const port = process.env.PORT || 5000;
 
@@ -27,11 +28,37 @@ const client = new MongoClient(uri, {
   }
 });
 
+
+const cookieOption = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production' ? true : false,
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+};
+
+
 async function run() {
   try {
     const featuresCollection = client.db('EduTaskHub').collection('features');
     const assignmentCollection = client.db('EduTaskHub').collection('createdAssignments');
     const SubmittedAssignmentCollection = client.db('EduTaskHub').collection('submittedAssignments');
+
+
+    // -------------auth related api--------------
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' }); //token generate
+
+      // the commented code would work only localhost but bellow codes would work with production and localhost also.
+      res.cookie('token', token, cookieOption)
+        .send({ success: true })
+    })
+
+    // clear cookie after logout
+    app.post('/logout', async (req, res) => {
+      const user = req.body;
+      res.clearCookie('token', { maxAge: 0 }).send({ success: true })
+    })
 
     
     // ----------------services related api -------------------
@@ -55,7 +82,7 @@ async function run() {
 
 
     
-    // get submitted assignment data from client side
+    // get submitted assignment data from client side & send to database
       app.post('/submittedAssignments', async(req, res) => {
         const submittedAssignment = req.body
         console.log(submittedAssignment)
@@ -64,8 +91,15 @@ async function run() {
       });
 
 
+        // read all submitted assignment data
+    app.get('/submittedAssignments', async(req, res) => {
+      const result = await SubmittedAssignmentCollection.find().toArray()
+      res.send(result)
+    });
 
-      // get posted assignment data from client side
+
+
+      // get posted assignment data from client side & send to database
       app.post('/createdAssignments', async(req, res) => {
         const createdAssignment = req.body
         console.log(createdAssignment)
@@ -117,7 +151,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
