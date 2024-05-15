@@ -157,6 +157,24 @@ async function run() {
     });
 
 
+    // update the submitted assignment data after give marks by examiner
+    app.put('/submittedAssignments/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updatedAssignment = req.body;
+      console.log(updatedAssignment);
+      const updateDoc = {
+        $set: {
+          obtainMarks: updatedAssignment.obtainMarks,
+          feedback: updatedAssignment.feedback,
+          status: updatedAssignment.status,
+        }
+      };
+      const result = await submittedAssignmentCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+
 
     // read all pending assignment data for pending assignment page
     app.get('/submittedAssignments', async (req, res) => {
