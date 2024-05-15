@@ -40,28 +40,28 @@ const logger = async (req, res, next) => {
   next()
 };
 
-const verifyToken = async (req, res, next) => {    //use this middleware (verifyToken) where you want to secure, like booking url
-  const token = req?.cookies?.token;
-  console.log('value of token in middleware:', token)
+// const verifyToken = async (req, res, next) => {   
+//   const token = req?.cookies?.token;
+//   console.log('value of token in middleware:', token)
 
-  if (!token) {      //if no token return with error
-    return res.status(401).send({ message: 'unauthorized access' })
-  }
+//   if (!token) {      //if no token return with error
+//     return res.status(401).send({ message: 'unauthorized access' })
+//   }
 
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {    // token verify
-    // error
-    if (err) {
-      console.log(err);
-      return res.status(401).send({ message: 'unauthorized access' })
-    }
-    // if token is valid then it would be decoded
-    console.log('value in the token:', decoded)
-    req.user = decoded
-    next();
-    // now go to any api and use condition (like booking) where you want to check the owner is the real owner to receive the data
-  })
+//   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {    // token verify
+//     // error
+//     if (err) {
+//       console.log(err);
+//       return res.status(401).send({ message: 'unauthorized access' })
+//     }
+//     // if token is valid then it would be decoded
+//     console.log('value in the token:', decoded)
+//     req.user = decoded
+//     next();
+//     // now go to any api and use condition (like booking) where you want to check the owner is the real owner to receive the data
+//   })
 
-}
+// }
 
 
 const cookieOption = {
@@ -91,13 +91,13 @@ async function run() {
     })
 
     // clear cookie after logout
-app.post("/logout", async (req, res) => {
-  const user = req.body;
-  console.log("logging out", user);
-  res
-    .clearCookie("token", { ...cookieOptions, maxAge: 0 })
-    .send({ success: true });
-});
+    app.post("/logout", async (req, res) => {
+      const user = req.body;
+      console.log("logging out", user);
+      res
+        .clearCookie("token", { ...cookieOption, maxAge: 0 })
+        .send({ success: true });
+    });
 
 
 
@@ -130,14 +130,14 @@ app.post("/logout", async (req, res) => {
     });
 
 
-    app.get('/subscriber', verifyToken, async (req, res) => {
+    app.get('/subscriber', async (req, res) => {
       console.log(req.query.email, req.user);
 
       // check if the token owner is the right owner to receive data
       console.log('token owner info', req.user)
-      if (req.user.email !== req.query.email) {
-        return res.status(403).send({ message: 'forbidden access' })
-      }
+      // if (req.user.email !== req.query.email) {
+      //   return res.status(403).send({ message: 'forbidden access' })
+      // }
 
       let query = {}
       if (req.query?.email) {
@@ -155,11 +155,19 @@ app.post("/logout", async (req, res) => {
       const result = await submittedAssignmentCollection.insertOne(submittedAssignment)
       res.send(result)
     });
-    
+
+
+
+    // read all pending assignment data for pending assignment page
+    app.get('/submittedAssignments', async (req, res) => {
+      const result = await submittedAssignmentCollection.find().toArray()
+      res.send(result)
+    });
+
 
 
     // for only my submitted assignment data
-    app.get('/submittedAssignments', verifyToken, async (req, res) => {
+    app.get('/submittedAssignments', async (req, res) => {
       console.log(req.query.email, req.user);
 
       // check if the token owner is the right owner to receive data
@@ -191,6 +199,7 @@ app.post("/logout", async (req, res) => {
     // read all create assignment data
     app.get('/createdAssignments', async (req, res) => {
       const result = await assignmentCollection.find().toArray()
+      console.log(result)
       res.send(result)
     });
 
