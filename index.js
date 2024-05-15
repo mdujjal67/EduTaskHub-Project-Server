@@ -9,9 +9,12 @@ const port = process.env.PORT || 5000;
 
 // middleware
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
-    credentials: true,
-    optionSuccessStatus: 200,
+  origin: ['http://localhost:5173',
+    'https://edutaskhub-80dcb.web.app',
+    'https://edutaskhub-80dcb.firebaseapp.com'
+  ],
+  credentials: true,
+  optionSuccessStatus: 200,
 }
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -72,7 +75,7 @@ async function run() {
   try {
     const featuresCollection = client.db('EduTaskHub').collection('features');
     const assignmentCollection = client.db('EduTaskHub').collection('createdAssignments');
-    const SubmittedAssignmentCollection = client.db('EduTaskHub').collection('submittedAssignments');
+    const submittedAssignmentCollection = client.db('EduTaskHub').collection('submittedAssignments');
     const subscribeCollection = client.db('EduTaskHub').collection('subscribers');
 
 
@@ -88,26 +91,28 @@ async function run() {
     })
 
     // clear cookie after logout
-    app.post('/logout', async (req, res) => {
-      const user = req.body;
-      res.clearCookie('token', { maxAge: 0 }).send({ success: true })
-    })
+app.post("/logout", async (req, res) => {
+  const user = req.body;
+  console.log("logging out", user);
+  res
+    .clearCookie("token", { ...cookieOptions, maxAge: 0 })
+    .send({ success: true });
+});
 
-    
+
 
 
     // ----------------services related api -------------------
-    
+
     // read and get all features data
     app.get('/features', async (req, res) => {
-        const cursor = featuresCollection.find();   //In one line: const result = await featuresCollection.find().toArray()
-        const result = await cursor.toArray();
-        res.send(result);
-      });
+      const cursor = featuresCollection.find();   //In one line: const result = await featuresCollection.find().toArray()
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
 
-
-      // read and get specific data
+    // read and get specific data
     app.get('/createdAssignments/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
@@ -116,15 +121,13 @@ async function run() {
     });
 
 
-
     // subscribe data receive from client side visitor
-    app.post('/subscriber', async(req, res) => {
+    app.post('/subscriber', async (req, res) => {
       const subscriber = req.body
       console.log(subscriber)
       const result = await subscribeCollection.insertOne(subscriber)
       res.send(result)
     });
-
 
 
     app.get('/subscriber', verifyToken, async (req, res) => {
@@ -145,14 +148,14 @@ async function run() {
     })
 
 
-    
     // get submitted assignment data from client side & send to database
-      app.post('/submittedAssignments', async(req, res) => {
-        const submittedAssignment = req.body
-        console.log(submittedAssignment)
-        const result = await SubmittedAssignmentCollection.insertOne(submittedAssignment)
-        res.send(result)
-      });
+    app.post('/submittedAssignments', async (req, res) => {
+      const submittedAssignment = req.body
+      console.log(submittedAssignment)
+      const result = await submittedAssignmentCollection.insertOne(submittedAssignment)
+      res.send(result)
+    });
+    
 
 
     // for only my submitted assignment data
@@ -169,24 +172,24 @@ async function run() {
       if (req.query?.email) {
         query = { email: req.query.email }
       }
-      const result = await SubmittedAssignmentCollection.find(query).toArray()
+      const result = await submittedAssignmentCollection.find(query).toArray()
       res.send(result)
     })
 
 
 
-      // get posted assignment data from client side & send to database
-      app.post('/createdAssignments', async(req, res) => {
-        const createdAssignment = req.body
-        console.log(createdAssignment)
-        const result = await assignmentCollection.insertOne(createdAssignment)
-        res.send(result)
-      });
+    // get posted assignment data from client side & send to database
+    app.post('/createdAssignments', async (req, res) => {
+      const createdAssignment = req.body
+      console.log(createdAssignment)
+      const result = await assignmentCollection.insertOne(createdAssignment)
+      res.send(result)
+    });
 
 
 
-      // read all create assignment data
-    app.get('/createdAssignments', async(req, res) => {
+    // read all create assignment data
+    app.get('/createdAssignments', async (req, res) => {
       const result = await assignmentCollection.find().toArray()
       res.send(result)
     });
@@ -194,36 +197,36 @@ async function run() {
 
 
     // delete a assignment data
-    app.delete('/createdAssignments/:id',async(req, res) => {
+    app.delete('/createdAssignments/:id', async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await assignmentCollection.deleteOne(query)
       res.send(result)
-  });
+    });
 
 
 
-  // for update data
-  app.put('/createdAssignments/:id', async (req, res) => {
-    const id = req.params.id;
-    const filter = { _id: new ObjectId(id) }
-    const updatedAssignment = req.body;
-    console.log(updatedAssignment);
-    const updateDoc = {
-      $set: {
-        title: updatedAssignment.title,
-        date: updatedAssignment.date,
-        description: updatedAssignment.description,
-        marks: updatedAssignment.marks,
-        level: updatedAssignment.level,
-        imageURL: updatedAssignment.imageURL
-      }
-    };
-    const result = await assignmentCollection.updateOne(filter, updateDoc)
-    res.send(result)
-  })
+    // for update data
+    app.put('/createdAssignments/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updatedAssignment = req.body;
+      console.log(updatedAssignment);
+      const updateDoc = {
+        $set: {
+          title: updatedAssignment.title,
+          date: updatedAssignment.date,
+          description: updatedAssignment.description,
+          marks: updatedAssignment.marks,
+          level: updatedAssignment.level,
+          imageURL: updatedAssignment.imageURL
+        }
+      };
+      const result = await assignmentCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
 
-    
+
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
