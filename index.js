@@ -186,6 +186,16 @@ async function run() {
 
 
 
+    // read and get specific submitted data
+    app.get('/submittedAssignments/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await submittedAssignmentCollection.findOne(query);
+      res.send(result);
+    });
+
+
+
     // get posted assignment data from client side & send to database
     app.post('/createdAssignments', async (req, res) => {
       const createdAssignment = req.body
